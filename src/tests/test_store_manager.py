@@ -88,6 +88,8 @@ def test_stock_flow(client):
     assert response.status_code == 201
     order_id = response.get_json()["order_id"]
 
+    
+
     # 5. Vérifiez le stock encore une fois → doit être 3
     response = client.get(f"/stocks/{product_id}")
     assert response.status_code == 201

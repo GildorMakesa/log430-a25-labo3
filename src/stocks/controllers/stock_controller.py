@@ -8,6 +8,7 @@ from flask import jsonify
 from stocks.queries.read_stock import get_stock_by_id, get_stock_for_all_products
 from stocks.commands.write_stock import set_stock_for_product
 
+
 def set_stock(request):
     """Set stock quantities of a product"""
     payload = request.get_json() or {}

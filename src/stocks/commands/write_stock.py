@@ -6,6 +6,8 @@ Auteurs : Gabriel C. Ullmann, Fabio Petrillo, 2025
 from sqlalchemy import text
 from stocks.models.stock import Stock
 from db import get_redis_conn, get_sqlalchemy_session
+from db import get_redis_conn, get_sqlalchemy_session
+from stocks.models.product import Product as ProductModel
 
 def set_stock_for_product(product_id, quantity):
     """Set stock quantity for product in MySQL"""
@@ -71,6 +73,11 @@ def update_stock_redis(order_items, operation):
         return
     r = get_redis_conn()
     stock_keys = list(r.scan_iter("stock:*"))
+    if not stock_keys:
+        # Premier peuplement si Redis est vide
+        _populate_redis_from_mysql(r)
+    
+    session = get_sqlalchemy_session()
     if stock_keys:
         pipeline = r.pipeline()
         for item in order_items:
@@ -80,7 +87,8 @@ def update_stock_redis(order_items, operation):
             else:
                 product_id = item['product_id']
                 quantity = item['quantity']
-            # TODO: ajoutez plus d'information sur l'article
+
+            key = f"stock:{product_id}"
             current_stock = r.hget(f"stock:{product_id}", "quantity")
             current_stock = int(current_stock) if current_stock else 0
             
@@ -89,8 +97,27 @@ def update_stock_redis(order_items, operation):
             else:  
                 new_quantity = current_stock - quantity
             
+            if new_quantity < 0:
+                new_quantity = 0
+
             pipeline.hset(f"stock:{product_id}", "quantity", new_quantity)
-        
+            need_name  = not r.hexists(key, "name")
+            need_sku   = not r.hexists(key, "sku")
+            need_price = not r.hexists(key, "price")
+
+            if need_name or need_sku or need_price:
+                p = session.query(ProductModel).filter(ProductModel.id == product_id).first()
+                if p:
+                    mapping = {}
+                    if need_name:
+                        mapping["name"] = p.name
+                    if need_sku:
+                        mapping["sku"] = p.sku
+                    if need_price:
+                        mapping["price"] = float(p.price or 0.0)
+                    if mapping:
+                        pipeline.hset(key, mapping=mapping)
+
         pipeline.execute()
     
     else:

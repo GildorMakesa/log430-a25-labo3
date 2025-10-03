@@ -10,6 +10,7 @@ from orders.controllers.order_controller import create_order, remove_order, get_
 from orders.controllers.user_controller import create_user, remove_user, get_user
 from stocks.controllers.product_controller import create_product, remove_product, get_product
 from stocks.controllers.stock_controller import get_stock, set_stock, get_stock_overview
+from stocks.schemas.query import Query
  
 app = Flask(__name__)
 
@@ -94,15 +95,18 @@ def get_stocks_overview():
     return jsonify(rows)
 
 # Endpoint that allows suppliers to check stock
-@app.post('/stocks/graphql-query')
-def graphql_supplier():
-    data = request.get_json()
+#@app.post('/stocks/graphql-query')
+@app.post('/stocks/graphql')
+def graphql_stock():
+    data = request.get_json(force=True, silent=False) or {}
+    query = data.get('query')
+    variables = data.get('variables')
     schema = Schema(query=Query)
-    result = schema.execute(data['query'], variables=data.get('variables'))
+    result = schema.execute(query, variable_values=variables)
     return jsonify({
-        'data': result.data,
-        'errors': [str(e) for e in result.errors] if result.errors else None
-    })
+        "data": result.data,
+        "errors": [str(e) for e in result.errors] if result.errors else None
+    }), 200
 
 # Start Flask app
 if __name__ == '__main__':
