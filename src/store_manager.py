@@ -87,7 +87,7 @@ def get_orders_report_best_selling_products():
     rows = get_report_best_selling_products()
     return jsonify(rows)
 
-@app.get('/stocks/reports/overview-stocks')
+@app.get('/stocks/reports/overview')
 def get_stocks_overview():
     """Get stocks for all products"""
     rows = get_stock_overview()
