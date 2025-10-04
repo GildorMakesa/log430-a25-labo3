@@ -1,6 +1,7 @@
 services:
   store_manager:
     build: .
+    container_name: store-manager-api        # <<< nom DNS stable
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
