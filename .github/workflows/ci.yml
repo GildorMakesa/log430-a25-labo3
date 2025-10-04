@@ -120,3 +120,4 @@ jobs:
           docker compose down || true
           docker compose up -d --build
           docker compose ps
+          docker compose down -v
