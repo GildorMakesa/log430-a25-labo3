@@ -115,7 +115,8 @@ jobs:
       - name: Deploy with Docker Compose
         run: |
           echo "🚀 Déploiement…"
+          docker network create labo03-network || true
           docker compose pull || true
-          docker compose down
+          docker compose down || true
           docker compose up -d --build
           docker compose ps
